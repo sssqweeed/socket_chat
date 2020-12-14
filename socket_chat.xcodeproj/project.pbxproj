@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		82389EE625876A2F00AD922F /* list_usr.c in Sources */ = {isa = PBXBuildFile; fileRef = 82389EE225876A2F00AD922F /* list_usr.c */; };
+		82389EE725876A2F00AD922F /* dynstr.c in Sources */ = {isa = PBXBuildFile; fileRef = 82389EE425876A2F00AD922F /* dynstr.c */; };
 		82771091258769CF0004ECFA /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 82771090258769CF0004ECFA /* main.c */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +25,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		82389EE225876A2F00AD922F /* list_usr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = list_usr.c; sourceTree = "<group>"; };
+		82389EE325876A2F00AD922F /* dynstr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dynstr.h; sourceTree = "<group>"; };
+		82389EE425876A2F00AD922F /* dynstr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dynstr.c; sourceTree = "<group>"; };
+		82389EE525876A2F00AD922F /* list_usr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = list_usr.h; sourceTree = "<group>"; };
 		8277108D258769CF0004ECFA /* socket_chat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = socket_chat; sourceTree = BUILT_PRODUCTS_DIR; };
 		82771090258769CF0004ECFA /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,6 +64,10 @@
 			isa = PBXGroup;
 			children = (
 				82771090258769CF0004ECFA /* main.c */,
+				82389EE425876A2F00AD922F /* dynstr.c */,
+				82389EE325876A2F00AD922F /* dynstr.h */,
+				82389EE225876A2F00AD922F /* list_usr.c */,
+				82389EE525876A2F00AD922F /* list_usr.h */,
 			);
 			path = socket_chat;
 			sourceTree = "<group>";
@@ -118,6 +128,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				82389EE625876A2F00AD922F /* list_usr.c in Sources */,
+				82389EE725876A2F00AD922F /* dynstr.c in Sources */,
 				82771091258769CF0004ECFA /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
