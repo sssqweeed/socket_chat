@@ -33,3 +33,14 @@ void add_str_char(struct _string* str, char ch){
 void dispose_srt(struct _string* str){
     free(str->p);
 }
+
+void delete_first(struct _string* string){
+    if(string->size != 0){
+        int i = 1;
+        while (string->p[i] != '\0') {
+            string->p[i - 1] = string->p[i];
+            i++;
+        }
+        string->p[i - 1] = string->p[i];
+    }
+}

@@ -7,58 +7,29 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define ALL 0
-#define EXPT_SERV -1
-#define MAX_USR 2
-#define ONLY_SERV -2
-
-// почему то не оказалось в stdlib.h
-// взял c википедии
-void reverse(char s[])
-{
-    unsigned long i, j;
-    char c;
-
-    for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
-        c = s[i];
-        s[i] = s[j];
-        s[j] = c;
-    }
-}
-void itoa(int n, char s[])
-{
-    int i, sign;
-
-    if ((sign = n) < 0)  /* записываем знак */
-        n = -n;          /* делаем n положительным числом */
-    i = 0;
-    do {       /* генерируем цифры в обратном порядке */
-        s[i++] = n % 10 + '0';   /* берем следующую цифру */
-    } while ((n /= 10) > 0);     /* удаляем */
-    if (sign < 0)
-        s[i++] = '-';
-    s[i] = '\0';
-    reverse(s);
-}
-//---------------------------------
+static const int EXPT_SERV = -1;
+static const int ONLY_SERV = -2;
+static const int MAX_USR = 2;
 
 bool correct_name(list_usr users, const char* name){
     unsigned long str_len = strlen(name);
     if(str_len < 3 || str_len > 16){
         return false;
     }
-    else{
-        bool result = true;
-        while (users != NULL && users->is_named) {
-            if(strcmp(users->name, name) == 0){
-                result = false;
-                break;
-            }
-            users = users->next;
-        }
-        return result;
+
+    if (strcmp(users->name, "bye") == 0) {
+        return false;
     }
+
+    while (users != NULL && users->is_named) {
+        if(strcmp(users->name, name) == 0){
+            return false;
+        }
+        users = users->next;
+    }
+    return true;
 }
+
 
 list_usr clear_closed(list_usr list){
     list_usr root = list;
@@ -76,11 +47,11 @@ list_usr clear_closed(list_usr list){
     return root;
 }
 
-void send_all(list_usr fds, const char mes, const int fd){
-    size_t err;
+
+void send_all(list_usr fds, const char* mes, const int fd){
     while (fds != NULL) {
         if(fd != fds->val && fds->is_named == 1){ // == 1 будет отправлять только именованным
-            err = write(fds->val, &mes, sizeof(char));
+            size_t err = write(fds->val, mes, strlen(mes));
             if(err == -1){
                 printf("Error in write");
             }
@@ -89,17 +60,16 @@ void send_all(list_usr fds, const char mes, const int fd){
     }
 }
 
+
 void server_message(list_usr fds, const char* mes, const int fd){
-    int i = 0;
-    // дублирует в чат сервера
-    while(mes[i] != '\0'){
-        if(fd != EXPT_SERV)
-            printf("%c", mes[i]);
-        if(fd != ONLY_SERV)
-            send_all(fds, mes[i], fd);
-        i++;
+    if (fd != EXPT_SERV) {
+        printf("%s", mes);
+    }
+    if (fd != ONLY_SERV) {
+        send_all(fds, mes, fd);
     }
 }
+
 
 int init_ls_port(void){
     int ls = socket(AF_INET, SOCK_STREAM, 0);
@@ -129,9 +99,8 @@ void connect_member(list_usr* list, int fd){
     server_message(*list, "<SM>: Someone joined with id: ", fd);
     // посылаем id
     char id_string[17];
-    itoa(fd, id_string);
-    server_message(*list, id_string , fd);
-    server_message(*list, "\n" , fd);
+    sprintf(id_string, "%d\n", fd);
+    server_message(*list, id_string, fd);
     // -----------
     const char mes1[] = "<SM>: please enter your name: \n";
     if(write(fd, mes1, sizeof(mes1)) == -1){
@@ -174,16 +143,10 @@ void request_name(list_usr users, list_usr cur_user, int fd){
         write(fd, mes3, sizeof(mes3));
         strcpy(cur_user->name, cur_user->message.p);
         clear_message(cur_user);
-        const char mes1[] = "<SM>: id ";
-        const char mes2[] = " is ";
-        char str_id[5];
-        itoa(fd, str_id);
-        
-        server_message(users, mes1, fd);
-        server_message(users, str_id, fd);
-        server_message(users, mes2, fd);
-        server_message(users, cur_user->name, fd);
-        server_message(users, "\n", fd);
+    
+        char message[128];
+        sprintf(message, "<SM>: id %d is %s\n", fd, cur_user->name);
+        server_message(users, message, fd);
     }
 }
 
