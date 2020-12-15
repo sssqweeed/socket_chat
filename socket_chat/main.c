@@ -10,26 +10,7 @@
 static const int EXPT_SERV = -1;
 static const int ONLY_SERV = -2;
 static const int MAX_USR = 2;
-
-bool correct_name(list_usr users, const char* name){
-    unsigned long str_len = strlen(name);
-    if(str_len < 3 || str_len > 16){
-        return false;
-    }
-
-    if (strcmp(users->name, "bye") == 0) {
-        return false;
-    }
-
-    while (users != NULL && users->is_named) {
-        if(strcmp(users->name, name) == 0){
-            return false;
-        }
-        users = users->next;
-    }
-    return true;
-}
-
+static const int LEN_BUF = 7;
 
 list_usr clear_closed(list_usr list){
     list_usr root = list;
@@ -37,7 +18,7 @@ list_usr clear_closed(list_usr list){
         if(list->is_named == 2){
             int fd_delete = list->val;
             list = list->next;
-            deletelem(&root, fd_delete);
+            delete_elem(&root, fd_delete);
             close(fd_delete);
         }
         else{
@@ -108,46 +89,59 @@ void connect_member(list_usr* list, int fd){
     }
 }
 
-void get_message(list_usr user){
-    if(user->init_mes == false){
-        init_str(&user->message);
-        user->init_mes = true;
+void fill_buffer(list_usr user){
+    if(user->is_init_buf == false){
+        init_str(&user->buffer);
+        user->is_init_buf = true;
     }
-    char buf[7];
+    char buf[LEN_BUF];
     size_t count_read = read(user->val, buf, sizeof(buf));
     for (size_t i = 0; i < count_read; i++) {
         if(buf[i] == '\r')
             continue;
-        if(buf[i] == '\n'){
-            user->ready_to_send = true;
-            // '\0' уже есть в конце
-            return;
-        }
-        add_str_char(&user->message, buf[i]);
+        add_str_char(&user->buffer, buf[i]);
     }
 }
 
-void request_name(list_usr users, list_usr cur_user, int fd){
-    const char mes3[] = "<SM>: OK!\n";
-    const char error[] = "<SM>: invalid name\n";
-
-    get_message(cur_user);
-    if(cur_user->ready_to_send){
-        cur_user->is_named = correct_name(users, cur_user->message.p);
-        if(cur_user->is_named == false || strcmp(cur_user->message.p, "bye") == 0){
-            write(fd, error, sizeof(error));
-            cur_user->is_named = false;
-            clear_message(cur_user);
-            return;
+bool ready_to_send(list_usr user){
+    int i = 0;
+    while (user->buffer.p[i] != 0) {
+        if (user->buffer.p[i] == '\n') {
+            return true;
         }
-        write(fd, mes3, sizeof(mes3));
-        strcpy(cur_user->name, cur_user->message.p);
-        clear_message(cur_user);
-    
-        char message[128];
-        sprintf(message, "<SM>: id %d is %s\n", fd, cur_user->name);
-        server_message(users, message, fd);
+        i++;
     }
+    return false;
+}
+
+bool correct_name(list_usr users, const char* name){
+    unsigned long str_len = strlen(name);
+    if(str_len < 3 || str_len > 16){
+        return false;
+    }
+
+    if (strcmp(name, "bye") == 0) {
+        return false;
+    }
+    
+    while (users != NULL && users->is_named) {
+        if(strcmp(users->name, name) == 0){
+            return false;
+        }
+        users = users->next;
+    }
+    return true;
+}
+
+struct _string get_message_from_buf(list_usr user){
+    struct _string message;
+    init_str(&message);
+    while(user->buffer.p[0] != '\n'){
+        add_str_char(&message, user->buffer.p[0]);
+        delete_first(&user->buffer);
+    }
+    delete_first(&user->buffer);
+    return message;
 }
 
 int main(int argc, const char* argv[]) {
@@ -205,13 +199,28 @@ int main(int argc, const char* argv[]) {
         while(!is_empty_list(cur_usr)){
             fd = cur_usr->val;
             if(FD_ISSET(fd, &readfds)){
-                if(cur_usr->is_named == false){
-                    request_name(users, cur_usr, fd);
-                }
-                else{
-                    get_message(cur_usr);
-                    if(cur_usr->ready_to_send){
-                        if(strcmp(cur_usr->message.p, "bye") == 0){
+                fill_buffer(cur_usr);
+                //if(cur_usr->ready_to_send){
+                while (ready_to_send(cur_usr)) {
+                    struct _string message = get_message_from_buf(cur_usr);
+                    if(!cur_usr->is_named){
+                        const char mes3[] = "<SM>: OK!\n";
+                        const char error[] = "<SM>: invalid name\n";
+                        if(correct_name(users, message.p)){
+                            strcpy(cur_usr->name, message.p);
+                            write(fd, mes3, sizeof(mes3));
+                            char mes[128];
+                            sprintf(mes, "<SM>: id %d is %s\n", fd, cur_usr->name);
+                            server_message(users, mes, fd);
+                            cur_usr->is_named = true;
+                        }
+                        else{
+                            write(fd, error, sizeof(error));
+                            cur_usr->is_named = false;
+                        }
+                    }
+                    else{
+                        if(strcmp(message.p, "bye") == 0){
                             server_message(users, "<SM>: user ", fd);
                             server_message(users, cur_usr->name, fd);
                             server_message(users, " left\n", fd);
@@ -220,11 +229,11 @@ int main(int argc, const char* argv[]) {
                         else{
                             server_message(users, cur_usr->name, fd);
                             server_message(users, ": ", fd);
-                            server_message(users, cur_usr->message.p, fd);
+                            server_message(users, message.p, fd);
                             server_message(users, "\n", fd);
                         }
-                        clear_message(cur_usr);
                     }
+                    dispose_str(&message);
                 }
             }
             cur_usr = cur_usr->next;

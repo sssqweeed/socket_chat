@@ -11,8 +11,7 @@ void add_list(struct node** list, int x){
         (*list)->next = NULL;
         (*list)->val = x;
         (*list)->is_named = false;
-        (*list)->ready_to_send = false;
-        (*list)->init_mes = false;
+        (*list)->is_init_buf = false;
         (*list)->index_name = 0;
     }
     else{
@@ -26,9 +25,8 @@ void add_list(struct node** list, int x){
         p->next->next = NULL;
         p->next->val = x;
         p->next->is_named = false;
-        p->next->init_mes = false;
+        p->next->is_init_buf = false;
         p->next->index_name = 0;
-        p->next->ready_to_send = false;
         return;
     }
 }
@@ -82,14 +80,14 @@ bool is_empty_list(list_usr list){
     return list == NULL;
 }
 
-void deletelem(list_usr* list, int elem){
+void delete_elem(list_usr* list, int elem){
     if(*list != NULL){
         // обработка первого элемента
         list_usr temp;
         if((*list)->val == elem){
             temp = (*list)->next;
-            if((*list)->init_mes)
-                dispose_srt(&(*list)->message);
+            if((*list)->is_init_buf)
+                dispose_str(&(*list)->buffer);
             free((*list));
             *list = temp;
             
@@ -104,8 +102,8 @@ void deletelem(list_usr* list, int elem){
                 }
             }
             temp = cur->next->next;
-            if(cur->next->init_mes)
-                dispose_srt(&(cur->next->message));
+            if(cur->next->is_init_buf)
+                dispose_str(&(cur->next->buffer));
             free(cur->next);
             cur->next = temp;
         }
@@ -113,7 +111,6 @@ void deletelem(list_usr* list, int elem){
 }
 
 void clear_message(list_usr user){
-    dispose_srt(&(user->message));
-    user->init_mes = false;
-    user->ready_to_send = false;
+    dispose_str(&(user->buffer));
+    user->is_init_buf = false;
 }

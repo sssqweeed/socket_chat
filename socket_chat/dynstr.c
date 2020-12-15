@@ -30,7 +30,7 @@ void add_str_char(struct _string* str, char ch){
     }
 }
 
-void dispose_srt(struct _string* str){
+void dispose_str(struct _string* str){
     free(str->p);
 }
 
@@ -43,4 +43,5 @@ void delete_first(struct _string* string){
         }
         string->p[i - 1] = string->p[i];
     }
+    string->size--;
 }
